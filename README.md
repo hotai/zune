@@ -9,7 +9,7 @@ Grammar is defined in `grammar.txt`. Example source code: `test.zu`.
 - Linux only (uses Unix syscalls). Does not work on Mac out of the box. Developed on Lubuntu.
 
 ## Prerequisites
-- `CMAKE`:<br>
+- `cmake`:<br>
   `$ sudo apt install binutils`<br>
   `$ sudo apt install cmake`<br>
   `$ sudo apt install build-essential`
@@ -18,7 +18,7 @@ Grammar is defined in `grammar.txt`. Example source code: `test.zu`.
 
 ## Building
 - `$ cmake -S . -B build/` to prepare CMAKE files.
-- To build, run `cmake --build build/`.
+- To build, run `cmake --build build/`
 - Once built, to compile a source file into assembly, run `build/zune test.zu`. Add command-line arguments to compile to binary, e.g.:<br>
 `$ build/zune test.zu -asm=./test.asm -bin=./test`<br>
 Run `build/zune` to see all params.
