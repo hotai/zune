@@ -62,7 +62,8 @@ void Assembler::_interpret(Node& node, vector<Node>* parent_list) {
         else if (expr.node_type == NodeType::expr_var) {
             _unary_op(""s, expr);
         }
-        else if (expr.node_type == NodeType::expr_binop) {
+        else if (expr.node_type == NodeType::expr_unop ||
+                expr.node_type == NodeType::expr_binop) {
             _interpret(expr, &node.nodes);
             // after this, the result of the expression will be
             // on top of stack. we no longer know what the value
@@ -87,7 +88,8 @@ void Assembler::_interpret(Node& node, vector<Node>* parent_list) {
         _if_stmt(node, parent_list);
     }
     else if (node.node_type == NodeType::loop_stmt) {
-        // in a while_stmt node, first node in list is condition and second is statements
+        // in a loop_stmt node, first node in list is number of times
+        // to loop and second is statements to execute within each loop
         _loop_stmt(node);
     }
     else if (node.node_type == NodeType::expr_bool) {
@@ -232,7 +234,7 @@ void Assembler::_if_stmt(Node& node, vector<Node>* parent_list) {
 }
 
 void Assembler::_loop_stmt(Node& node) {
-    throw runtime_error{"In Assembler.assemble: 'while' statements are not implemented."};
+    throw runtime_error{"In Assembler.assemble: Loops are not implemented."};
 
     Node condition = node.nodes[0];
     Node stmt = node.nodes[1];
@@ -240,18 +242,25 @@ void Assembler::_loop_stmt(Node& node) {
     string label_start = "loop_start"s + to_string(_label_suf_loop);
     string label_end = "loop_end"s + to_string(_label_suf_loop++);
 
-    // TODO: this is only a one-time evaluation; need to be able to reevaluate it every time
-    // for it to be a proper loop
+    // figure out the number of times to execute loop and put it in rax
     _interpret(condition, &node.nodes);
-    _pop("rax");
+    _pop("rcx"); // loop counter is in ecx
 
-    _out << "\n" << label_start << ":\n"
-        << "    test rax, rax\n"
-        << "    jz " << label_end << "\n";
+    _out << "    cmp rcx, 0\n" // sanity check for counter < 0
+        << "    jb " << label_end << "\n"
+        << "\n" << label_start << ":\n";
 
+    // save and restore ecx at beginning/end of statements
+    // as they could overwrite the loop counter
+    _push("rcx");
+    // TODO: the statements inside the loop mess up the stack pointer:
+    // rax gets pushed at the end of every iteration, so the stack grows,
+    // throwing off the relative variable locations on the stack
     _interpret(stmt, &node.nodes);
+    //_out << "    pop rax\n";
+    _pop("rcx");
     
-    _out << "    jmp " << label_start << "\n\n";
+    _out << "    loop " << label_start << "\n\n";
     _out << label_end << ":\n";
 }
 
@@ -262,6 +271,10 @@ void Assembler::_unary_op(const string& op, Node& node) {
         // find the value of the variable on the stack and re-push it on top
         varname = node.expr;
         size_t stack_offset = _stack_height - 1 - _stack.at(varname);
+
+//cout << node.detailed() << "; " << varname << ": " << _stack.at(varname)
+// << "; hgt: " << _stack_height << "; off: " << stack_offset << endl;
+        
         _out //<< "\n"
             << "    push QWORD [rsp + " << (stack_offset*8) << "]\n";
         _stack_height++;
@@ -271,8 +284,11 @@ void Assembler::_unary_op(const string& op, Node& node) {
             << "    mov rax, " << node.expr << "\n";
         _push("rax");
     }
-    else if (node.node_type == NodeType::expr_unop ||
-            node.node_type == NodeType::expr_binop ||
+    else if (node.node_type == NodeType::expr_unop) {
+        // evaluate the list of nodes recursively
+        _unary_op(node.nodes[0].expr, node.nodes[1]);
+    }
+    else if (node.node_type == NodeType::expr_binop ||
             node.node_type == NodeType::expr_list) {
         // evaluate the list of nodes recursively
         _interpret(node);
@@ -410,14 +426,23 @@ void Assembler::_pop(const string& reg) {
 }
 
 void Assembler::_print_result() {
-    _stack_height--;
-    _out << "    pop rsi\n" // value to be printed
+    _pop("rsi"); // value to be printed
+    _out << "    push rax\n" // save the current state as printf will mess it up
+        << "    push rbx\n"
+        << "    push rcx\n"
+        // << "    push rdi\n"
+        // << "    push rsi\n"
         << "    push rbp\n"
         //<< "    mov	rdi, fmt_int\n" // this triggers ld warnings
         << "    lea rdi, [rel fmt_int]\n"
         << "    mov	rax, 0\n"
         << "    call printf WRT ..plt\n"
-        << "    pop	rbp\n";
+        << "    pop	rbp\n" // restore state
+        // << "    pop rsi\n"
+        // << "    pop rdi\n"
+        << "    pop rcx\n"
+        << "    pop rbx\n"
+        << "    pop rax\n";
 }
 
 /*

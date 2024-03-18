@@ -109,7 +109,6 @@ private:
     void _expect(const Token& tok, const string& s, int location) const;
     Node _parse_stmt();
     Node _parse_if_loop();
-    // Node _parse_then();
     Node _parse_bool();
     Node _parse_compare();
     Node _parse_expr();

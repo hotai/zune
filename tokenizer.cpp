@@ -40,7 +40,7 @@ vector<Token> Tokenizer::tokenize() {
 				tokens.push_back({TokenType::_set, buf});
 			else if (_is_bool_op(buf)) // and, or, not
 				tokens.push_back({TokenType::_bool, buf});
-			else if (_is_flow_op(buf)) // if, elif, else, while
+			else if (_is_flow_op(buf)) // if, elif, else, repeat
 				tokens.push_back({TokenType::flow, buf});
 			else // var name
 				tokens.push_back({TokenType::varname, buf});

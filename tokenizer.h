@@ -98,7 +98,7 @@ protected:
 	}
 
 	inline bool _is_flow_op(string& s) {
-		static const char* const words[] = {"if", "elif", "else", "while"};
+		static const char* const words[] = {"if", "elif", "else", "repeat"};
 		for (const char* it : words)
 			if (s == it) return true;
 		return false;

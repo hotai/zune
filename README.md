@@ -22,7 +22,6 @@ Grammar is defined in `grammar.txt`. Example source code: `test.zu`.
 - Once built, to compile a source file into assembly, run `build/zune test.zu`. Add command-line arguments to compile to binary, e.g.:<br>
 `$ build/zune test.zu -asm=./test.asm -bin=./test`<br>
 Run `build/zune` to see all params.
-- To manually build a binary from the resulting assembly file:
-
+- To manually build a binary from the resulting assembly file:<br>
   `$ nasm -felf64 ./test.asm -o ./test.o`<br>
   `$ gcc -lc -z execstack ./test.o -o ./test`

@@ -69,7 +69,7 @@ Node Parser::_parse_if_loop() {
     // the "else" portion will not have conditions and thus will only have one node (stmts)
     if (curr_tok.value == "if" || curr_tok.value == "elif" || curr_tok.value == "else")
         node.node_type = NodeType::if_stmt;
-    else // while
+    else // repeat
         node.node_type = NodeType::loop_stmt;
     node.expr = curr_tok.value;
     
